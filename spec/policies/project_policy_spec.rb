@@ -6,73 +6,124 @@ RSpec.describe ProjectPolicy do
 
   subject { described_class }
 
-  permissions :show? do
-    let(:user) { FactoryBot.create :user}
-    let(:project) { FactoryBot.create :project}
+  # permissions :show? do
+  #   let(:user) { FactoryBot.create :user}
+  #   let(:project) { FactoryBot.create :project}
     
-    it "blocks anonymous users" do
-      expect(subject).not_to permit(nil, project)
-    end
+  #   it "blocks anonymous users" do
+  #     expect(subject).not_to permit(nil, project)
+  #   end
     
-    it "allows viewers of the project" do
-      assign_role!(user, :viewer, project)
-      expect(subject).to permit(user, project)
-    end
+  #   it "allows viewers of the project" do
+  #     assign_role!(user, :viewer, project)
+  #     expect(subject).to permit(user, project)
+  #   end
     
-    it "allows editors of the project" do
-      assign_role!(user, :editor, project)
-      expect(subject).to permit(user, project)
-    end
+  #   it "allows editors of the project" do
+  #     assign_role!(user, :editor, project)
+  #     expect(subject).to permit(user, project)
+  #   end
     
-    it "allows managers of the project" do
-      assign_role!(user, :manager, project)
-      expect(subject).to permit(user, project)
-    end
+  #   it "allows managers of the project" do
+  #     assign_role!(user, :manager, project)
+  #     expect(subject).to permit(user, project)
+  #   end
     
-    it "allows administrators" do
-      admin = FactoryBot.create :user, :admin
-      expect(subject).to permit(admin, project)
-    end
+  #   it "allows administrators" do
+  #     admin = FactoryBot.create :user, :admin
+  #     expect(subject).to permit(admin, project)
+  #   end
     
-    it "doesn't allow users assigned to other projects" do
-      other_project = FactoryBot.create :project
-      assign_role!(user, :manager, other_project)
-      expect(subject).not_to permit(user, project)
-    end
-  end
+  #   it "doesn't allow users assigned to other projects" do
+  #     other_project = FactoryBot.create :project
+  #     assign_role!(user, :manager, other_project)
+  #     expect(subject).not_to permit(user, project)
+  #   end
+  # end
   
-  permissions :update? do
-    let(:user) {FactoryBot.create :user}
-    let(:project) {FactoryBot.create :project}
+  # permissions :update? do
+  #   let(:user) {FactoryBot.create :user}
+  #   let(:project) {FactoryBot.create :project}
     
-    it "blocks anonymous users" do
-      expect(subject).not_to permit(nil, project)
+  #   it "blocks anonymous users" do
+  #     expect(subject).not_to permit(nil, project)
+  #   end
+    
+  #   it "doesn't allow viewers of the projects" do
+  #     assign_role!(user, :viewer, project)
+  #     expect(subject).not_to permit(user, project)
+  #   end
+    
+  #   it "doesn't allow editors of the project" do
+  #     assign_role!(user, :editor, project)
+  #     expect(subject).not_to permit(user, project)
+  #   end
+    
+  #   it "allows managers of the project" do
+  #     assign_role!(user, :manager, project)
+  #     expect(subject).to permit(user, project)
+  #   end
+    
+  #   it "allows administrators" do
+  #     admin = FactoryBot.create :user, :admin
+  #     expect(subject).to permit(admin, project)
+  #   end
+    
+  #   it "doesn't allow users assigned to other projects" do
+  #     other_project = FactoryBot.create :project
+  #     assign_role!(user, :manager, other_project)
+  #     expect(subject).not_to permit(user, project)
+  #   end
+  # end
+  
+  context "permissions" do
+    subject { ProjectPolicy.new(user, project) }
+    
+    let(:user) { FactoryBot.create(:user)}
+    let(:project) { FactoryBot.create(:project)}
+    
+    context "for anonymous users" do
+      let(:user) {nil}
+      
+      it { should_not permit_action :show }
+      it { should_not permit_action :update }
     end
     
-    it "doesn't allow viewers of the projects" do
-      assign_role!(user, :viewer, project)
-      expect(subject).not_to permit(user, project)
+    context "for viewers of the project" do
+      before { assign_role!(user, :viewer, project)}
+      
+      it { should permit_action :show }
+      it { should_not permit_action :update }
     end
     
-    it "doesn't allow editors of the project" do
-      assign_role!(user, :editor, project)
-      expect(subject).not_to permit(user, project)
+    context "for editors of the project" do
+      before { assign_role!(user, :editor, project) }
+      
+      it { should permit_action :show }
+      it { should_not permit_action :update }
     end
     
-    it "allows managers of the project" do
-      assign_role!(user, :manager, project)
-      expect(subject).to permit(user, project)
+    context "for managers of the project" do
+      before { assign_role!(user, :manager, project)}
+      
+      it { should permit_action :show}
+      it { should permit_action :update}
     end
     
-    it "allows administrators" do
-      admin = FactoryBot.create :user, :admin
-      expect(subject).to permit(admin, project)
+    context "for managers of other project" do
+      before do
+        assign_role!(user, :manager, FactoryBot.create(:project))
+      end
+      
+      it { should_not permit_action :show}
+      it { should_not permit_action :update}
     end
     
-    it "doesn't allow users assigned to other projects" do
-      other_project = FactoryBot.create :project
-      assign_role!(user, :manager, other_project)
-      expect(subject).not_to permit(user, project)
+    context "for administrators" do
+      let(:user) { FactoryBot.create :user, :admin}
+      
+      it { should permit_action :show}
+      it { should permit_action :update}
     end
   end
   
